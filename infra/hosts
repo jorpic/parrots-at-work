@@ -1,0 +1,4 @@
+# It is assumed that you have configured access to this server under the
+# `Host birds` record in `~/.ssh/config`.
+[prod]
+birds
