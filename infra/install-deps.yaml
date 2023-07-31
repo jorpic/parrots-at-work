@@ -1,0 +1,10 @@
+---
+- hosts: prod
+  gather_facts: no
+
+  pre_tasks:
+    # - name: Update APT cache
+    #   apt: update_cache=yes cache_valid_time="{{7*24*60*60 | int}}"
+
+  roles:
+    - {name: kafka, become: yes}
