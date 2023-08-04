@@ -1,0 +1,34 @@
+#define _Card(id, text, color) \
+  id [label=text fillcolor=color];
+
+#define Actor(id, desc)     _Card(id, desc, "yellow")
+#define Command(id)         _Card(id, id,   "lightblue")
+#define Event(id)           _Card(id, id,   "darkorange")
+#define Read(id, desc)      _Card(id, desc, "lightgreen")
+#define Policy(id, desc)    _Card(id, desc, "violet")
+#define Aggregate(id)       _Card(id, id,   "lightyellow")
+
+#define External(id)          \
+  subgraph id {               \
+    graph[style=invisible]    \
+    cluster=True              \
+    _Card(id, id,   "pink")   \
+  }
+
+#define EventStormingLegend()                   \
+  subgraph cluster_Legend {                     \
+    label=Legend                                \
+    Read("Read Model", "Read Model")            \
+    Actor("Actor", "Actor")                     \
+    Command("Command")                          \
+    Aggregate("Aggregate")                      \
+    Event("Event")                              \
+    Policy("Policy", "Policy")                  \
+    External("External System")                 \
+    "Read Model" -> "Actor" [style=invis]       \
+    "Actor" -> "Command" [style=invis]          \
+    "Command" -> "Aggregate" [style=invis]      \
+    "Aggregate" -> "Event" [style=invis]        \
+    "Event" -> "Policy" [style=invis]           \
+    "Policy" -> "External System" [style=invis] \
+  }
