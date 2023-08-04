@@ -8,3 +8,4 @@
 
   roles:
     - {name: kafka, become: yes}
+    - {name: postgres, become: yes}
