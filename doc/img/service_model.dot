@@ -1,0 +1,47 @@
+#define _EdgeAttrs(l, s, c) [label=l style=s color=c fontcolor=c];
+#define Event(name)   _EdgeAttrs(name, dashed, "darkorange")
+#define Command(name) _EdgeAttrs(name, solid, "deepskyblue")
+#define Read(name)    _EdgeAttrs(name, solid, "green")
+
+
+digraph ServiceModel {
+  graph[style=dotted]
+  node[shape=rect]
+
+
+  subgraph cluster_Tasks {
+    TaskCommander
+    TaskUI -> TaskReader Read("")
+    TaskUI -> TaskCommander Command("Create\nShuffle\nComplete")
+  }
+
+  subgraph cluster_Billing {
+    BillingCommander
+    BillingUI -> BillingReader Read("")
+    BillingCommander -> BillingReader Event("Transactions")
+  }
+
+  subgraph cluster_Cron {
+    graph[style=invisible]
+    Cron -> BillingCommander Event("Day Closed")
+  }
+
+  subgraph cluster_Mail {
+    graph[style=invisible]
+    BillingCommander -> Postman Command("Send Mail")
+  }
+
+  Auth -> TaskCommander Event("Bird Registered")
+  TaskCommander -> BillingCommander Event("Assigned\nCompleted")
+  BillingCommander -> TaskCommander Event("Price Set")
+
+  subgraph cluster_Legend {
+    graph[style=solid]
+    label=Legend
+    A [shape=none label="" ordering=out]
+    B [shape=none label=""]
+    A -> B Event("Event")
+    A -> B Read("Sync\nRead")
+    A -> B Command("Sync\nCommand")
+  }
+}

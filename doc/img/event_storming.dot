@@ -1,0 +1,138 @@
+#include "es_defs.dot"
+
+digraph EventStorming {
+  node[shape=rect style=filled]
+  rankdir=LR
+  EventStormingLegend()
+
+  subgraph cluster_TaskManagement {
+    graph[style=dotted];
+    label="Task Management"
+
+    Aggregate("Task")
+
+    subgraph cluster_TaskCreation {
+      graph[style=invisible];
+
+      Actor(bird_2, "Bird")
+      Command("Create\nTask")
+      Event("Task\nCreated")
+      bird_2
+        -> "Create\nTask"
+        -> "Task\nCreated";
+
+      Command("Assign\nTask")
+      Policy(check_role_before_assign, "Check\nbird`s role")
+      Policy(check_status_before_assign, "Check\ntask is\nnot completed")
+      Event("Task\nAssigned")
+
+      "Task\nCreated"
+        -> "Assign\nTask"
+        -> {check_role_before_assign, check_status_before_assign}
+        -> "Task\nAssigned";
+
+      Read(workers, "List of worker birds")
+      workers
+        -> "Assign\nTask";
+    }
+
+    // subgraph cluster_TaskShuffle {
+      Read(read_tasks_2, "Task list")
+      Actor(bird_4, "Bird Manager")
+      Command("Request\nTasks Shuffle")
+      Event("Tasks Shuffle\nRequested")
+
+      read_tasks_2
+        -> bird_4
+        -> "Request\nTasks Shuffle"
+        -> "Tasks Shuffle\nRequested";
+
+        "Tasks Shuffle\nRequested" -> "Assign\nTask";
+    // }
+
+    subgraph cluster_TaskCompletion {
+      graph[style=invisible];
+
+      Read(read_tasks, "Task list")
+      Actor(bird_3, "Bird")
+      Policy(check_assignee, "Check\ntask's assignee")
+      Command("Complete\nTask")
+      Event("Task\nCompleted")
+
+      read_tasks
+        -> bird_3
+        -> check_assignee
+        -> "Complete\nTask"
+        -> "Task\nCompleted";
+    }
+  }
+
+  External("Clock")
+  External("Bank")
+  External("Postman")
+
+  subgraph cluster_TaskBilling {
+    graph[style=dotted];
+    label="Task Billing"
+
+    Aggregate("Task Price")
+    Aggregate("Bird's Balance")
+
+    Command("Set\nTask Pice")
+    Event("Task Price\nSet")
+    "Task\nCreated"
+      -> "Set\nTask Pice"
+      -> "Task Price\nSet";
+
+    Command("Withdraw\nTask Fee")
+    Event("Task Fee\nWithdrawed")
+    "Task\nAssigned"
+      -> "Withdraw\nTask Fee"
+      -> "Task Fee\nWithdrawed";
+
+    Command("Pay\nTask Reward")
+    Event("Task Reward\nPayed")
+    "Task\nCompleted"
+      -> "Pay\nTask Reward"
+      -> "Task Reward\nPayed";
+
+    Event("Day\nClosed")
+    Command("Pay\nSalary")
+    Event("Salary\nPayed")
+    Command("Send\nMail")
+    Event("Mail\nSent")
+    "Clock"
+      -> "Day\nClosed"
+      -> "Pay\nSalary"
+      -> {"Bank", "Salary\nPayed"};
+    "Salary\nPayed"
+      -> "Send\nMail"
+      -> {"Mail\nSent", "Postman"};
+  }
+
+
+  subgraph cluster_Auth {
+    graph[style=dotted];
+    label=Auth
+
+    Aggregate("Bird")
+
+    Actor(bird_1, "Bird")
+    Command("Try\nAuth")
+    Event("Auth\nOk")
+    Event("Auth\nFailed")
+
+    bird_1
+      -> "Try\nAuth"
+      -> {"Auth\nOk", "Auth\nFailed"};
+
+    Actor(bird_11, "Bird")
+    Command("Register\nBird")
+    Event("Bird\nRegistered")
+
+    bird_11
+      -> "Register\nBird"
+      -> "Bird\nRegistered";
+  }
+}
+
