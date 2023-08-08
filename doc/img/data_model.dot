@@ -1,0 +1,34 @@
+digraph DataModel {
+  graph[style=dotted]
+  node[shape=record]
+  rankdir=LR
+
+  subgraph cluster_Auth {
+    label=Auth
+    Bird [label="<x> Bird | {Name | Role}"];
+  }
+
+  subgraph cluster_TaskManagement {
+    label="Task Manager"
+    Task [label="<x> Task | {Text | <ass> Assignee | Status}"];
+    WorkingBird [label="<x> WorkingBird | {Name | Role}"];
+  }
+
+  subgraph cluster_TaskBilling {
+    label="Task Billing"
+    TaskPrice [label="TaskPrice | {<task> Task | Fee | Reward}"];
+    Balance [label="BirdBalance | {<bird> Bird | Money}"];
+
+    MoneyTransaction [
+      label="MoneyTransaction | {Bird | Timestamp | Amount | Reason}"
+    ];
+
+    SalaryPayment [label="SalaryPayment | {Bird | Date | Amount}"];
+  }
+
+
+
+  edge[style=dashed dir=back];
+  Bird:x -> {Task:ass, WorkingBird:x, Balance:bird};
+  Task:x -> TaskPrice:task;
+}
