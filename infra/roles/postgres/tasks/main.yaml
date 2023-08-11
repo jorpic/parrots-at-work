@@ -1,6 +1,0 @@
-- name: "Install PostgreSQL & contrib extensions"
-  apt: name="{{item}}" state=present
-  loop: [postgresql-14, postgresql-contrib]
-
-- name: "Start and enable service"
-  systemd: name=postgresql state=started enabled=yes
