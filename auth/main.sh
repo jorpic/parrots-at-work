@@ -3,11 +3,15 @@
 set -o pipefail
 
 . lib/http.sh
+. lib/redpanda.sh
 
 
 sqlite3 db < schema.sql
 ed25519_generate_keys .
 PUB_KEY=$(cat pub)
+
+log_wait_for_topic auth
+log_event auth key_refreshed "$(jq -sR <<< \"$PUB_KEY\")"
 
 
 function is_valid_bird_name() {
@@ -32,6 +36,7 @@ function register_bird() { # name
       returning json_object('bid', bid, 'name', name, 'role', role);
 EOF
     ) ; then
+    log_event auth bird_registered "$res"
     echo -n "$res"
   else
     jq -nc --arg err "$res" '{error: $err}'
