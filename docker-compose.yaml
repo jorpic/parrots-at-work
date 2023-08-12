@@ -7,6 +7,16 @@ services:
     depends_on:
       - redpanda
 
+  task:
+    container_name: task
+    build: ./task
+    ports:
+      - "8002:3000"
+    depends_on:
+      - auth
+      - redpanda
+
+
   # Copy-pasted from https://docs.redpanda.com/docs/get-started/quick-start
   redpanda:
     container_name: redpanda
