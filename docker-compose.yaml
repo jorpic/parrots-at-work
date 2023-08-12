@@ -1,0 +1,5 @@
+services:
+  auth:
+    build: ./auth
+    ports:
+      - "8001:3000"
