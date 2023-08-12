@@ -25,23 +25,15 @@ function http_parse_request() { # continuation
     [ "$key" = "content-length" ] && content_length=$val
   done
 
-  case $method in
-    GET)
-      body=null
-      ;;
-    POST)
-      ### FIXME: does not fail on a sequence of valid JSON values: `2[]{}`
-      body=$(head -c $content_length | jq -c .)
-      if [ $? -ne 0 ] ; then
-        http_response 400 '{"error": "invalid JSON in body"}'
-        return 400
-      fi
-      ;;
-    *)
-      http_response 405 '{"error": "method not supported"}'
-      return 405
-      ;;
-  esac
+  local body=null
+  if [ $content_length -gt 0 ] ; then
+    ### FIXME: does not fail on a sequence of valid JSON values: `2[]{}`
+    body=$(head -c $content_length | jq -c .)
+    if [ $? -ne 0 ] ; then
+      http_response 400 '{"error": "invalid JSON in body"}'
+      return 400
+    fi
+  fi
 
   jq --null-input --compact-output \
     --arg method "$method"         \
@@ -53,21 +45,15 @@ function http_parse_request() { # continuation
 }
 
 
-function http_parse_jwt() {
-  local jwt_key_path=$1
-  local request=$(jq -c .)
-
-  jwt=$(jq -r '.header.auth' <<< "$request")
+function http_parse_jwt() { # jwt_key_path, request
+  local jwt=$(jq -r '.header.auth' <<< "$2")
   jwt=${jwt#Bearer }
-  if ! jwt_check "$jwt_key_path" "$jwt" ; then
+  if ! jwt_check "$1" "$jwt" ; then
     http_response 401 '{"error": "JWT: bad signature or expired"}'
     return 401
   fi
 
-  echo -n "$request" \
-    | jq --compact-output \
-      --arg jwt "$(jwt_payload $jwt)" \
-      '.auth = $jwt'
+  jq -c --arg jwt "$(jwt_payload $jwt)" '.auth = $jwt' <<< "$2"
 }
 
 

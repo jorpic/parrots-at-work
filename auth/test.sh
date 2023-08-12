@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -e
+
 URL=${1:-localhost:3000}
 
 echo -n "check 404 ... "
