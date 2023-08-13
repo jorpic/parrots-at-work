@@ -11,7 +11,7 @@ JWT=$(curl -s $auth/bird/login --data '{"name":"PeepChirp"}' | jq -r .jwt)
 Auth="Auth: Bearer $JWT"
 
 echo create a task...
-curl -H "$Auth" --data '{"title": "sudo make sandwich"}' $task
+curl -H "$Auth" --data '{"title": "sudo make me a sandwich"}' $task
 
 echo get all tasks...
 curl -H "$Auth" localhost:8002/task
