@@ -37,10 +37,10 @@ function register_bird() { # name
 EOF
     ) ; then
     log_event auth bird_registered "$res"
-    echo -n "$res"
+    http_response 200 "$res"
   else
-    jq -nc --arg err "$res" '{error: $err}'
-    return 1
+    res=$(jq -nc --arg err "$res" '{error: $err}')
+    http_response 400 "$res"
   fi
 }
 
@@ -59,10 +59,12 @@ function login_bird() { # name
       where name = lower(x'$name');
 EOF
     ) ; then
-    echo "$res" | jq -c --arg jwt "$(jwt_sign key "$res")" '.jwt = $jwt'
+    local jwt=$(jwt_sign key "$res")
+    res=$(jq -c --arg jwt "$jwt" '.jwt = $jwt' <<< "$res")
+    http_response 200 "$res"
   else
-    jq -nc --arg err "$res" '{error: $err}'
-    return 403
+    res=$(jq -nc --arg err "$res" '{error: $err}')
+    http_response 403 "$res"
   fi
 }
 
@@ -84,22 +86,12 @@ function handle_request() {
         http_response 400 '{"error": "Invalid bird name"}'
         return
       fi
-
-      if res=$(register_bird "$name") ; then
-        http_response 200 "$res"
-      else
-        http_response 400 "$res"
-      fi
+      register_bird "$name"
       ;;
 
     POST/bird/login)
       local name=$(jq -r '.body.name' <<< "$request")
-
-      if res=$(login_bird "$name") ; then
-        http_response 200 "$res"
-      else
-        http_response 403 "$res"
-      fi
+      login_bird "$name"
       ;;
 
     *)

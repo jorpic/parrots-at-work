@@ -53,7 +53,7 @@ function http_parse_jwt() { # jwt_key_path, request
     return 401
   fi
 
-  jq -c --arg jwt "$(jwt_payload $jwt)" '.auth = $jwt' <<< "$2"
+  jq -c --argjson jwt "$(jwt_payload $jwt)" '.auth = $jwt' <<< "$2"
 }
 
 

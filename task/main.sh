@@ -49,7 +49,7 @@ function complete_task() { # bid, task_id
       select * from task
         where tid = cast(x'$(echo -n $2 | xxd -ps)' as int);
 
-    begin;
+    begin immediate;
     insert into response
       select 404, json_object('error', 'Task not found')
       where not exists (select * from my_task);
@@ -75,6 +75,7 @@ function complete_task() { # bid, task_id
     insert into response
       select 200, json_object(
           'tid', tid,
+          'title', title,
           'status', status,
           'assigned_to', assigned_to)
       from my_task
