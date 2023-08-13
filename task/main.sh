@@ -9,6 +9,7 @@ set -o pipefail
 sqlite3 db < schema.sql
 log_wait_for_topic task
 ./sync_birds.sh &
+./log_shuffles.sh &
 
 while [ 1 ] ; do
   if curl -s auth:3000/jwt_key | jq -r '.pub' > pub ; then
@@ -32,7 +33,7 @@ function create_task() { # title
 EOF
     ) ; then
     # FIXME: can fail if there are no workers
-    log_event task task_created "$res"
+    log_event task created "$res"
     http_response 200 "$res"
   else
     res=$(jq -nc --arg err "$res" '{error: $err}')
@@ -88,9 +89,43 @@ EOF
     local code=$(jq -r .code <<< "$res")
     res=$(jq -r .resp <<< "$res")
     if [ "$code" = "200" ] ; then
-      log_event task task_completed "$res"
+      log_event task completed "$res"
     fi
     http_response "$code" "$res"
+  else
+    res=$(jq -nc --arg err "$res" '{error: $err}')
+    http_response 500 "$res"
+  fi
+}
+
+function shuffle_tasks() {
+  local res
+  if res=$(sqlite3 -json db 2>&1 <<EOF
+    begin immediate;
+
+    with
+      new_shuffle_id(val) as
+        (select 1+max(shuffle_id) from shuffle),
+      random_worker(worker, num) as
+        (select bid, row_number() over () from bird where role = 'worker'),
+      max_worker_num(val) as
+        (select count() from random_worker)
+      insert into shuffle(shuffle_id, task_id, assigned_to)
+        select
+          coalesce(new_shuffle_id.val, 0), tid, worker
+        from task, new_shuffle_id, max_worker_num, random_worker
+          where task.status <> 'completed'
+            and random_worker.num = abs(random()) % max_worker_num.val + 1;
+
+    update task
+      set assigned_to = shuffle.assigned_to
+      from shuffle
+        where tid = shuffle.task_id
+          and shuffle_id = coalesce((select max(shuffle_id) from shuffle), 0);
+      commit;
+EOF
+    ) ; then
+    http_response 200 '{"done": true}'
   else
     res=$(jq -nc --arg err "$res" '{error: $err}')
     http_response 500 "$res"
@@ -112,16 +147,23 @@ function handle_request() {
   echo $route role: $role, bird: $bird 1>&2
 
   case $route in
+    GET/task)
+      res=$(echo 'select * from all_tasks' | sqlite3 -json db | jq -c)
+      [ -z "$res" ] && res='[]'
+      http_response 200 "$res"
+      ;;
     POST/task)
       create_task "$(jq -r '.body.title' <<< "$request")"
       ;;
     POST/task/complete)
       complete_task "$bird" "$(jq -r '.body.task_id' <<< "$request")"
       ;;
-    GET/task)
-      res=$(echo 'select * from all_tasks' | sqlite3 -json db | jq -c)
-      [ -z "$res" ] && res='[]'
-      http_response 200 "$res"
+    POST/task/shuffle)
+      if [ "$role" = 'manager' ] ; then
+        shuffle_tasks
+      else
+        http_response 403 '{"error": "You are not a manager!"}'
+      fi
       ;;
     *)
       http_response 404 '{"Tweet!": "Tweet!"}'
