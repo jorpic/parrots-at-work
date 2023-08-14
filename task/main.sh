@@ -88,9 +88,7 @@ EOF
     ) ; then
     local code=$(jq -r .code <<< "$res")
     res=$(jq -r .resp <<< "$res")
-    if [ "$code" = "200" ] ; then
-      log_event task completed "$res"
-    fi
+    [ "$code" = "200" ] && log_event task completed "$res"
     http_response "$code" "$res"
   else
     res=$(jq -nc --arg err "$res" '{error: $err}')
@@ -159,11 +157,8 @@ function handle_request() {
       complete_task "$bird" "$(jq -r '.body.task_id' <<< "$request")"
       ;;
     POST/task/shuffle)
-      if [ "$role" = 'manager' ] ; then
-        shuffle_tasks
-      else
-        http_response 403 '{"error": "You are not a manager!"}'
-      fi
+      [ "$role" = 'manager' ] && shuffle_tasks \
+        || http_response 403 '{"error": "You are not a manager!"}'
       ;;
     *)
       http_response 404 '{"Tweet!": "Tweet!"}'

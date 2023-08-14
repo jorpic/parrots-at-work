@@ -3,7 +3,6 @@
 . lib/redpanda.sh
 
 function sync_birds() {
-  local event
   while read -r event ; do
     echo sync_birds: $event 1>&2
     # FIXME: upsert
