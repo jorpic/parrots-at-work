@@ -4,7 +4,6 @@
 
 
 function notify_all() {
-  local line
   while read -r line ; do
     log_event task reassigned "$line"
   done

@@ -82,11 +82,8 @@ function handle_request() {
     POST/bird)
       local name=$(jq -r '.body.name' <<< "$request")
       name=${name,,}
-      if ! is_valid_bird_name "$name" ; then
-        http_response 400 '{"error": "Invalid bird name"}'
-        return
-      fi
-      register_bird "$name"
+      is_valid_bird_name "$name" && register_bird "$name" \
+        || http_response 400 '{"error": "Invalid bird name"}'
       ;;
 
     POST/bird/login)
