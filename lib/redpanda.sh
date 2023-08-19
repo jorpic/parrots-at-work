@@ -1,20 +1,22 @@
 #!/usr/bin/env bash
 
-function log_wait_for_topic() { # topic
-  while [ 1 ] ; do
-    echo waiting for redpanda to start...
-    local res=$(rpk -X brokers=redpanda:9092 topic create "$1")
-    if [[ "$res" =~ "TOPIC_ALREADY_EXISTS" ]] ; then
-      break
-    fi
-    sleep 1
+function log_prepare_topics() { # topics
+  for topic in $@ ; do
+    while [ 1 ] ; do
+      local res=$(rpk -X brokers=redpanda:9092 topic create "$topic")
+      if [[ "$res" =~ "TOPIC_ALREADY_EXISTS" ]] ; then
+        break
+      fi
+      echo waiting for redpanda to start $topictj...
+      sleep 1
+    done
   done
 }
 
 function log_event() { # topic, event, payload
+  echo $1 $2 $3
   jq -nc --arg ev "$2" --argjson val "$3" '{event: $ev, value: $val}' \
-    | rpk -X brokers=redpanda:9092 topic produce "$1" \
-    1>&2
+    | rpk -X brokers=redpanda:9092 topic produce "$1"
 }
 
 function log_event_decode() {

@@ -10,8 +10,7 @@ sqlite3 db < schema.sql
 ed25519_generate_keys .
 PUB_KEY=$(cat pub)
 
-log_wait_for_topic auth
-log_event auth key_refreshed "$(jq -sR <<< \"$PUB_KEY\")"
+log_prepare_topics bird_streaming
 
 
 function is_valid_bird_name() {
@@ -30,13 +29,14 @@ function register_bird() { # name
   esac
 
   local res
-  if res=$(sqlite3 db 2>&1 <<EOF
+  if res=$(sqlite3 -json db 2>&1 <<EOF
     insert into bird(name, role)
       values (lower(x'$name'), '$role')
-      returning json_object('bid', bid, 'name', name, 'role', role);
+      returning *;
 EOF
     ) ; then
-    log_event auth bird_registered "$res"
+    res=$(jq -c '.[0]' <<< "$res")
+    log_event bird_streaming created 1 "$res"
     http_response 200 "$res"
   else
     res=$(jq -nc --arg err "$res" '{error: $err}')

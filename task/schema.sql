@@ -1,8 +1,7 @@
 create table if not exists bird(
   bid integer primary key,
   name text unique not null,
-  role text not null,
-  event_offset integer not null
+  role text not null
 );
 
 create table if not exists task(

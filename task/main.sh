@@ -4,19 +4,14 @@ set -o pipefail
 
 . lib/http.sh
 . lib/redpanda.sh
-
+. lib/service.sh
 
 sqlite3 db < schema.sql
-log_wait_for_topic task
+log_prepare_topics task_{streaming,lifecycle}
+load_jwt_key
+
 ./sync_birds.sh &
 ./log_shuffles.sh &
-
-while [ 1 ] ; do
-  if curl -s auth:3000/jwt_key | jq -r '.pub' > pub ; then
-    break
-  fi
-  sleep 1
-done
 
 
 function create_task() { # title
@@ -33,7 +28,7 @@ function create_task() { # title
 EOF
     ) ; then
     # FIXME: can fail if there are no workers
-    log_event task created "$res"
+    log_event task_lifecycle created "$res"
     http_response 200 "$res"
   else
     res=$(jq -nc --arg err "$res" '{error: $err}')
@@ -88,7 +83,10 @@ EOF
     ) ; then
     local code=$(jq -r .code <<< "$res")
     res=$(jq -r .resp <<< "$res")
-    [ "$code" = "200" ] && log_event task completed "$res"
+    if [ "$code" = "200" ] ; then
+      log_event task_lifecycle completed "{\"bird\": $1, \"task\": $2}"
+      log_event task_streaming updated "$res"
+    fi
     http_response "$code" "$res"
   else
     res=$(jq -nc --arg err "$res" '{error: $err}')
