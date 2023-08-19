@@ -24,7 +24,8 @@ function register_bird() { # name
   local role
   case $(echo $name | sha256sum | head -c1) in
     0) role=admin ;;
-    1 | 2 | 3) role=manager ;;
+    1 | 2)  role=manager ;;
+    3) role=accountant ;;
     *) role=worker ;;
   esac
 
