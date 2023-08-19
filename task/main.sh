@@ -14,6 +14,7 @@ load_jwt_key
 ./log_shuffles.sh &
 
 
+# FIXME: can fail if there are no workers
 function create_task() { # title
   local res
   if res=$(sqlite3 -json db 2>&1 <<EOF
@@ -27,8 +28,10 @@ function create_task() { # title
     returning *;
 EOF
     ) ; then
-    # FIXME: can fail if there are no workers
-    log_event task_lifecycle created "$res"
+    res=$(jq -c '.[0]' <<< "$res")
+    log_event task_streaming created "$res"
+    log_event task_lifecycle created \
+      "$(jq -c '{bird: .assigned_to, task: .tid}' <<< "$res")"
     http_response 200 "$res"
   else
     res=$(jq -nc --arg err "$res" '{error: $err}')

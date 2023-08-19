@@ -5,8 +5,9 @@
 
 function notify_all() {
   while read -r line ; do
-    log_event task_lifecycle reassigned "$line"
     log_event task_streaming updated "$line"
+    log_event task_lifecycle reassigned \
+      "$(jq -c '{bird: .assigned_to, task: .task_id}' <<< "$line")"
   done
 }
 

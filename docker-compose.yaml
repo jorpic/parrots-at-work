@@ -16,6 +16,14 @@ services:
       - auth
       - redpanda
 
+  billing:
+    container_name: billing
+    build: ./billing
+    ports:
+      - "8003:3000"
+    depends_on:
+      - auth
+      - redpanda
 
   # Copy-pasted from https://docs.redpanda.com/docs/get-started/quick-start
   redpanda:
