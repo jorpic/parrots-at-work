@@ -37,13 +37,14 @@ EOF
 }
 
 
-function complete_task() { # bid, task_id
+function complete_task() { # bird_id, task_id
+  local bid="cast(x'$(echo -n $1 | xxd -ps)' as int)"
+  local tid="cast(x'$(echo -n $2 | xxd -ps)' as int)"
   local res
   if res=$(sqlite3 db 2>&1 <<EOF
     create temporary table response(code int not null, resp text not null);
     create temporary view my_task as
-      select * from task
-        where tid = cast(x'$(echo -n $2 | xxd -ps)' as int);
+      select * from task where tid = $tid;
 
     begin immediate;
     insert into response
@@ -59,13 +60,13 @@ function complete_task() { # bid, task_id
     insert into response
       select 401, json_object('error', 'This is not your task!')
       from my_task
-      where assigned_to <> $1
+      where assigned_to <> $bid
         and not exists (select * from response);
 
     update task
       set status = 'completed'
-      where assigned_to = $1
-        and tid = cast(x'$(echo -n $2 | xxd -ps)' as int)
+      where assigned_to = $bid
+        and tid = $tid
         and not exists (select * from response);
 
     insert into response
