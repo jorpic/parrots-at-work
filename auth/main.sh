@@ -4,6 +4,7 @@ set -o pipefail
 
 . lib/http.sh
 . lib/redpanda.sh
+. lib/service.sh
 
 
 sqlite3 db < schema.sql
@@ -11,6 +12,7 @@ ed25519_generate_keys .
 PUB_KEY=$(cat pub)
 
 log_prepare_topics bird_streaming
+load_json_schemas bird_streaming/created/1
 
 
 function is_valid_bird_name() {

@@ -9,17 +9,25 @@ set -o pipefail
 sqlite3 db < schema.sql
 log_prepare_topics task_{streaming,lifecycle}
 load_jwt_key
+load_json_schemas \
+  bird_streaming/created/1 \
+  task_streaming/created/2 \
+  task_lifecycle/{created,reassigned,completed}/1
 
 ./sync_birds.sh &
 ./log_shuffles.sh &
 
 
+# FIXME: can fail if there are no workers
 function create_task() { # title
+  local title=$(sed 's/\s*\[.*\]\s*/ /g' <<< "$1")
+  local jira_id=$(sed -n 's/.*\[\(..*\)\].*/\1/p' <<< "$1")
   local res
   if res=$(sqlite3 -json db 2>&1 <<EOF
-    insert into task(title, fee, reward, assigned_to)
+    insert into task(title, jira_id, fee, reward, assigned_to)
       select
-        '' || x'$(echo -n "$1" | xxd -ps)',
+        '' || x'$(echo -n "$title" | xxd -ps)',
+        nullif(trim('' || x'$(echo -n "$jira_id" | xxd -ps)'), ''),
         (abs(random()) % 10) + 10,
         (abs(random()) % 20) + 20,
         bid
@@ -27,8 +35,10 @@ function create_task() { # title
     returning *;
 EOF
     ) ; then
-    # FIXME: can fail if there are no workers
-    log_event task_lifecycle created "$res"
+    res=$(jq -c '.[0]' <<< "$res")
+    log_event task_streaming created 2 "$res"
+    log_event task_lifecycle created 1 \
+      "$(jq -c '{bird: .assigned_to, task: .tid}' <<< "$res")"
     http_response 200 "$res"
   else
     res=$(jq -nc --arg err "$res" '{error: $err}')
@@ -84,10 +94,8 @@ EOF
     ) ; then
     local code=$(jq -r .code <<< "$res")
     res=$(jq -r .resp <<< "$res")
-    if [ "$code" = "200" ] ; then
-      log_event task_lifecycle completed "{\"bird\": $1, \"task\": $2}"
-      log_event task_streaming updated "$res"
-    fi
+    [ "$code" = "200" ] && \
+      log_event task_lifecycle completed 1 "{\"bird\": $1, \"task\": $2}"
     http_response "$code" "$res"
   else
     res=$(jq -nc --arg err "$res" '{error: $err}')

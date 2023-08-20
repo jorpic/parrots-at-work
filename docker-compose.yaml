@@ -5,6 +5,7 @@ services:
     ports:
       - "8001:3000"
     depends_on:
+      - schema_registry
       - redpanda
 
   task:
@@ -14,7 +15,24 @@ services:
       - "8002:3000"
     depends_on:
       - auth
+      - schema_registry
       - redpanda
+
+  billing:
+    container_name: billing
+    build: ./billing
+    ports:
+      - "8003:3000"
+    depends_on:
+      - auth
+      - schema_registry
+      - redpanda
+
+  schema_registry:
+    container_name: schema_registry
+    build: ./schema_registry
+    ports:
+      - "8004:3000"
 
 
   # Copy-pasted from https://docs.redpanda.com/docs/get-started/quick-start

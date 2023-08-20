@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Event matadata v1",
+  "description": "Common event header",
+  "type": "object",
+  "required": [
+    "timestamp",
+    "partition",
+    "offset",
+    "meta_version",
+    "topic",
+    "event",
+    "event_version",
+    "value"
+  ],
+  "properties": {
+    "timestamp":     { "type": "number" },
+    "partition":     { "type": "number" },
+    "offset":        { "type": "number" },
+    "meta_version":  { "const": 1 },
+    "topic":         { "type": "string" },
+    "event_name":    { "type": "string" },
+    "event_version": { "type": "number" },
+    "value":         { "type": "object" }
+  }
+}
