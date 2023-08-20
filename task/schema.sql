@@ -12,6 +12,7 @@ create table if not exists task(
     default 'created'
     check (status in ('created', 'completed')),
   title text not null default '',
+  jira_id text,
   fee integer not null,
   reward integer not null,
   assigned_to integer not null,
