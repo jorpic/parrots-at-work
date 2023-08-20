@@ -5,7 +5,7 @@
 function sync_tasks() {
   while read -r event ; do
     echo -n "$event" \
-      | jq -r '.value | [.tid, .title, .fee, .reward] | @csv' \
+      | jq -r '.value | [.tid, .title, .jira_id, .fee, .reward] | @csv' \
       | sqlite3 -csv db ".import '|cat -' task"
   done
 }

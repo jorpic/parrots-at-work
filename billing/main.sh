@@ -8,7 +8,8 @@ sqlite3 db < schema.sql
 log_prepare_topics {bird,task}_streaming task_lifecycle
 load_jwt_key
 load_json_schemas \
-  {bird,task}_streaming/created/1 \
+  bird_streaming/created/1 \
+  task_streaming/created/{1,2} \
   task_lifecycle/{created,reassigned,completed}/1
 
 ./sync_birds.sh &

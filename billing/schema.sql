@@ -7,6 +7,7 @@ create table if not exists bird(
 create table if not exists task(
   tid integer primary key,
   title text not null,
+  jira_id text,
   fee integer not null,
   reward integer not null
 );
