@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
-docker image rm paw/lib
 docker image rm paw-auth
 docker image rm paw-task
 docker image rm paw-billing

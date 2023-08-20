@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "tid",
+    "created_at",
+    "title",
+    "fee",
+    "reward"
+  ],
+  "properties": {
+    "tid":        { "type": "number" },
+    "created_at": { "type": "string" },
+    "title":      { "type": "string" },
+    "fee":        { "type": "number" },
+    "reward":     { "type": "number" }
+  }
+}

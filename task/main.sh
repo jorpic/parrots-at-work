@@ -9,6 +9,9 @@ set -o pipefail
 sqlite3 db < schema.sql
 log_prepare_topics task_{streaming,lifecycle}
 load_jwt_key
+load_json_schemas \
+  {bird,task}_streaming/created/1 \
+  task_lifecycle/{created,reassigned,completed}/1
 
 ./sync_birds.sh &
 ./log_shuffles.sh &
@@ -29,8 +32,8 @@ function create_task() { # title
 EOF
     ) ; then
     res=$(jq -c '.[0]' <<< "$res")
-    log_event task_streaming created "$res"
-    log_event task_lifecycle created \
+    log_event task_streaming created 1 "$res"
+    log_event task_lifecycle created 1 \
       "$(jq -c '{bird: .assigned_to, task: .tid}' <<< "$res")"
     http_response 200 "$res"
   else
@@ -87,10 +90,8 @@ EOF
     ) ; then
     local code=$(jq -r .code <<< "$res")
     res=$(jq -r .resp <<< "$res")
-    if [ "$code" = "200" ] ; then
-      log_event task_lifecycle completed "{\"bird\": $1, \"task\": $2}"
-      log_event task_streaming updated "$res"
-    fi
+    [ "$code" = "200" ] && \
+      log_event task_lifecycle completed 1 "{\"bird\": $1, \"task\": $2}"
     http_response "$code" "$res"
   else
     res=$(jq -nc --arg err "$res" '{error: $err}')
